@@ -1,0 +1,113 @@
+--- /dev/null
++++ b/drivers/leds/leds-glmv1000.c
+@@ -0,0 +1,82 @@
++/*
++ * LEDs device register for GL.inet mv1000
++ *
++ */
++
++#include <linux/kernel.h>
++#include <linux/init.h>
++#include <linux/platform_device.h>
++#include <linux/leds.h>
++#include <linux/err.h>
++#include <linux/io.h>
++#include <linux/nsc_gpio.h>
++//#include <linux/mv1000_gpio.h>
++#include <linux/module.h>
++
++static struct gpio_led gpio_leds[] = {
++	{
++		.name = "gl-mv1000:green:vpn",
++		.gpio = 487,
++		.default_state = LEDS_GPIO_DEFSTATE_OFF,
++		.active_low = 1,
++	},
++	{
++		.name = "gl-mv1000:green:wifi",
++		.gpio = 488,
++		.default_state = LEDS_GPIO_DEFSTATE_OFF,
++		.active_low = 1,
++	},
++	{
++		.name = "gl-mv1000:green:power",
++		.gpio = 489,
++		.default_state = LEDS_GPIO_DEFSTATE_ON,
++		.active_low = 1,
++	},
++
++
++};
++
++static void led_dev_release(struct device *dev)
++{
++
++}
++
++static struct gpio_led_platform_data gpio_led_info = {
++	.leds		= gpio_leds,
++	.num_leds	= ARRAY_SIZE(gpio_leds),
++};
++
++static struct platform_device leds_gpio = {
++	.name = "leds-gpio",
++	.id = -1,
++	.dev = {
++        	.platform_data = &gpio_led_info,
++        	.release = led_dev_release,
++    	},
++};
++
++static int __init glmv1000_led_init(void)
++{
++	int ret;
++	
++	ret = platform_device_register(&leds_gpio); 
++
++	if(ret){
++		pr_err("Error registering mv1000 leds deviecs\n");
++		platform_device_unregister(&leds_gpio);
++	}
++
++	return ret;
++}
++
++static void __exit glmv1000_led_exit(void)
++{
++	platform_device_unregister(&leds_gpio);
++}
++
++module_init(glmv1000_led_init);
++module_exit(glmv1000_led_exit);
++
++MODULE_AUTHOR("li.zhang <li.zhang@gl-inet.com>");
++MODULE_DESCRIPTION("GL.inet MV1000 LED");
++MODULE_LICENSE("GPL");
+--- a/drivers/leds/Makefile
++++ b/drivers/leds/Makefile
+@@ -7,6 +7,7 @@ obj-$(CONFIG_LEDS_CLASS_FLASH)		+= led-c
+ obj-$(CONFIG_LEDS_TRIGGERS)		+= led-triggers.o
+ 
+ # LED Platform Drivers
++obj-$(CONFIG_LEDS_GLMV1000)		+= leds-glmv1000.o
+ obj-$(CONFIG_LEDS_88PM860X)		+= leds-88pm860x.o
+ obj-$(CONFIG_LEDS_AAT1290)		+= leds-aat1290.o
+ obj-$(CONFIG_LEDS_APU)			+= leds-apu.o
+--- a/drivers/leds/Kconfig
++++ b/drivers/leds/Kconfig
+@@ -40,6 +40,15 @@ config LEDS_BRIGHTNESS_HW_CHANGED
+ 
+ comment "LED drivers"
+ 
++
++config LEDS_GLMV1000
++	tristate "LED Support for GLMV1000"
++	depends on LEDS_CLASS
++	depends on PINCTRL_ARMADA_37XX
++	help
++	  This option enables support for on-chip LED drivers found on GLMV1000
++	  Semiconductor 88f3720 PMIC.
++
+ config LEDS_88PM860X
+ 	tristate "LED Support for Marvell 88PM860x PMIC"
+ 	depends on LEDS_CLASS
