@@ -1,16 +1,16 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=rtl8812au-ct
-PKG_RELEASE=2
+PKG_RELEASE=3
 
 PKG_LICENSE:=GPLv2
 PKG_LICENSE_FILES:=
 
-PKG_SOURCE_URL:=https://github.com/greearb/rtl8812AU_8821AU_linux.git
-PKG_MIRROR_HASH:=fa689e034cad9e4683ea784b8f3cb590492ab5c68e8babd492a4e8bf2de3b114
+PKG_SOURCE_URL:=https://github.com/aircrack-ng/rtl8812au.git
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_DATE:=2020-01-12
-PKG_SOURCE_VERSION:=e0d586aa93cb8687dd7dc0e593b6a820df2d6e1d
+PKG_SOURCE_DATE:=2020-05-09
+PKG_SOURCE_VERSION:=dff6a6509158f3ec2e50361a394e4607658a1468
+PKG_MIRROR_HASH:=55dc1bfef4b43fb5674304d2db3c9078f9d1a2fd1cfe9339d6a98f9ac75720f5
 
 PKG_MAINTAINER:=Ben Greear <greearb@candelatech.com>
 PKG_BUILD_PARALLEL:=1
@@ -23,12 +23,11 @@ include $(INCLUDE_DIR)/package.mk
 
 define KernelPackage/rtl8812au-ct
   SUBMENU:=Wireless Drivers
-  TITLE:=Driver for Realtek 8812 AU devices comfast 912-ac, etc
+  TITLE:=Driver for rtl8812au/21au and rtl8814au USB WiFi Adapters.
   DEPENDS:=+kmod-cfg80211 +kmod-usb-core +@DRIVER_11N_SUPPORT +@DRIVER_11AC_SUPPORT
   FILES:=\
 	$(PKG_BUILD_DIR)/rtl8812au.ko
   AUTOLOAD:=$(call AutoProbe,rtl8812au)
-  PROVIDES:=kmod-rtl8812au
 endef
 
 NOSTDINC_FLAGS = \
@@ -38,13 +37,26 @@ NOSTDINC_FLAGS = \
 	-I$(STAGING_DIR)/usr/include/mac80211-backport/uapi \
 	-I$(STAGING_DIR)/usr/include/mac80211 \
 	-I$(STAGING_DIR)/usr/include/mac80211/uapi \
+	-include backport/autoconf.h \
 	-include backport/backport.h
 
-NOSTDINC_FLAGS+=-DCONFIG_IOCTL_CFG80211 -DRTW_USE_CFG80211_STA_EVENT -DBUILD_OPENWRT
+NOSTDINC_FLAGS += -DCONFIG_IOCTL_CFG80211 -DRTW_USE_CFG80211_STA_EVENT \
+	-D_LINUX_BYTEORDER_SWAB_H -DBUILD_OPENWRT -DRTW_SINGLE_WIPHY
+ifeq ($(CONFIG_BIG_ENDIAN), y)
+NOSTDINC_FLAGS += -DCONFIG_BIG_ENDIAN
+endif
+ifeq ($(CONFIG_LITTLE_ENDIAN), y)
+NOSTDINC_FLAGS += -DCONFIG_LITTLE_ENDIAN
+endif
+
+PKG_MAKE_FLAGS += USER_MODULE_NAME=rtl8812au
+PKG_MAKE_FLAGS += USER_DRV_NAME=rtl8812au
+KERNEL_MAKE_FLAGS += CONFIG_88XXAU=m
 
 define Build/Compile
 	+$(MAKE) $(PKG_JOBS) -C "$(LINUX_DIR)" \
 		$(KERNEL_MAKE_FLAGS) \
+		$(PKG_MAKE_FLAGS) \
 		M="$(PKG_BUILD_DIR)" \
 		NOSTDINC_FLAGS="$(NOSTDINC_FLAGS)" \
 		modules
