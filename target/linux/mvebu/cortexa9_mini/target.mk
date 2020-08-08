@@ -1,0 +1,14 @@
+#
+# Copyright (C) 2017 Hauke Mehrtens
+#
+# This is free software, licensed under the GNU General Public License v2.
+# See /LICENSE for more information.
+#
+
+include $(TOPDIR)/rules.mk
+
+ARCH:=arm
+BOARDNAME:=Marvell Armada (mini wrt1900ac-v1 wrt32x)
+CPU_TYPE:=cortex-a9
+CPU_SUBTYPE:=neon
+KERNELNAME:=zImage dtbs
