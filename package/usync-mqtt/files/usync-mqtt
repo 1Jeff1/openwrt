@@ -1,0 +1,35 @@
+#!/bin/sh /etc/rc.common
+
+START=80
+
+USE_PROCD=1
+PROG=/usr/sbin/usync-mqtt
+
+service_triggers() {
+	procd_add_reload_trigger usync
+}
+
+start_service() {
+	. /lib/functions.sh
+
+	config_load 'usync'
+	config_get serial 'config' 'serial'
+	config_get venue 'config' 'venue'
+	config_get username 'mqtt' 'username'
+	config_get password 'mqtt' 'password'
+	config_get server 'mqtt' 'server'
+	config_get port 'mqtt' 'port'
+	config_get debug 'mqtt' 'debug'
+
+	procd_open_instance
+	procd_set_param command "$PROG"
+	[ -n "$serial" ] && procd_append_param command -S $serial
+	[ -n "$username" ] && procd_append_param command -u $username
+	[ -n "$password" ] && procd_append_param command -p $password
+	[ -n "$server" ] && procd_append_param command -s $server
+	[ -n "$port" ] && procd_append_param command -P $port
+	[ -n "$venue" ] && procd_append_param command -v $venue
+	[ "$debug" -eq 1 ] && procd_append_param command -d
+	procd_set_param respawn
+	procd_close_instance
+}
